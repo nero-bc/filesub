@@ -1,5 +1,7 @@
 from pyrogram import Client, filters
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import Message
+
+from pyromod.helpers import ikb
 
 from FSub import ADMINS, CHANNEL_DB, StrTools
 
@@ -35,8 +37,10 @@ async def batch_command(client, message):
         else:
             return await first_message.reply(MESSAGE_INVALID, quote=True)
 
-    text_string    = f"get-{first_message_id * abs(CHANNEL_DB)}-{second_message_id * abs(CHANNEL_DB)}"
-    base64_string  = StrTools.encoder(text_string)
+
+    text_string   = f"get-{first_message_id * abs(CHANNEL_DB)}-{second_message_id * abs(CHANNEL_DB)}"
+    base64_string = StrTools.encoder(text_string)
     generated_link = f"t.me/{client.username}?start={base64_string}"
-    share_button   = InlineKeyboardMarkup([[InlineKeyboardButton("Bagikan", url=f't.me/share/url?url={generated_link}')]])
-    return await second_message.reply(generate_link, reply_markup=share_button, quote=True, disable_web_page_preview=True)
+    share_button  = ikb([[("Bagikan", f"t.me/share/url?url={generate_link}", "url")]])
+    await message.delete()
+    return await second_message.reply(generated_link, reply_markup=share_button, quote=True, disable_web_page_preview=True)

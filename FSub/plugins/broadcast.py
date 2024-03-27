@@ -35,7 +35,6 @@ async def broadcast_command(client, message):
             continue
         try:
             await replied.copy(user_id, protect_content=PROTECT_CONTENT) ; successful += 1
-            await asyncio.sleep(0.25)
         except FloodWait as e:
             await asyncio.sleep(e.value)
         except Exception:
