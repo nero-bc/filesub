@@ -18,4 +18,4 @@ async def generate_command(client, message):
     base64_string  = StrTools.encoder(text_string)
     generated_link = f"t.me/{client.username}?start={base64_string}"
     share_button   = InlineKeyboardMarkup([[InlineKeyboardButton("Bagikan", url=f't.me/share/url?url={generated_link}')]])
-    return await generate.edit(generated_link, reply_markup=share_button)
+    return await generate.edit(generated_link, reply_markup=share_button, disable_web_page_preview=True)
