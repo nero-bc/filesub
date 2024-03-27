@@ -176,6 +176,7 @@ class FSub(Client):
         try:
             self.bot_logger.info("Memeriksa akses bot di CHANNEL_DB...")
             hello_world = await self.send_message(CHANNEL_DB, "Hello World!") ; await hello_world.delete()
+            get_chat    = await self.get_chat(CHANNEL_DB)
             self.bot_logger.info(f"CHANNEL_DB terdeteksi: {get_chat.title} (ID: {get_chat.id})")
         except:
             self.bot_logger.error(f"@{self.username} tidak memiliki akses/tidak berhasil mengirim pesan di CHANNEL_DB. Pastikan CHANNEL_DB diisi dengan benar dan bot menjadi admin serta diberi akses mengirim pesan.")
