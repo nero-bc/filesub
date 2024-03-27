@@ -5,9 +5,7 @@ import base64
 
 from pymongo import MongoClient
 
-from pyromod import Client
-
-from pyrogram import filters
+from pyrogram import Client, filters
 from pyrogram.types import BotCommand, InlineKeyboardButton
 from pyrogram.enums import ParseMode
 from pyrogram.errors import UserNotParticipant
