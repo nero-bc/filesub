@@ -11,7 +11,7 @@ from pyrogram.enums import ParseMode
 from pyrogram.errors import UserNotParticipant
 
 logging.basicConfig(level=logging.INFO)
-logging.getLogger("pyrogram").setLevel(logging.WARNING)
+logging.getLogger("pyrogram").setLevel(logging.ERROR)
 LOGGER = logging.getLogger("FSub")
 
 API_ID    = int(os.environ.get("API_ID", 2040))
