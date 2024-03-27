@@ -1,4 +1,4 @@
-FROM python:3.9-alpine as builder
+FROM python:3.9-alpine
 
 WORKDIR /FSub
 COPY . ./
