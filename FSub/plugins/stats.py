@@ -4,8 +4,7 @@ import asyncio
 from pyrogram import Client, filters
 from pyrogram.types import Message
 
-from FSub import ADMINS
-from FSub.helper.userdb import full_user
+from FSub import ADMINS, UserDB
 
 
 @Client.on_message(filters.command("ping") & filters.private)
@@ -21,4 +20,4 @@ async def ping_command(_, message):
 async def users_command(_, message):
     processing = await message.reply("...", quote=True)
     await asyncio.sleep(0.25)
-    return await processing.edit(f"{len(full_user())} pengguna")
+    return await processing.edit(f"{len(UserDB.all())} pengguna")

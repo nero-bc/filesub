@@ -1,23 +1,30 @@
 import os
 import logging
 import uvloop
+import base64
+
+from pymongo import MongoClient
 
 from pyromod import Client
-from pyrogram.types import BotCommand
+
+from pyrogram import filters
+from pyrogram.types import BotCommand, InlineKeyboardButton
 from pyrogram.enums import ParseMode
+from pyrogram.errors import UserNotParticipant
 
 logging.basicConfig(level=logging.INFO)
-logging.getLogger("pyrogram").setLevel(logging.ERROR)
+logging.getLogger("pyrogram").setLevel(logging.WARNING)
 LOGGER = logging.getLogger("FSub")
 
 API_ID    = int(os.environ.get("API_ID", 2040))
 API_HASH  = os.environ.get("API_HASH", "b18441a1ff607e10a989891a5462e627")
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+
 
 DATABASE_NAME = BOT_TOKEN.split(":", 1)[0]
-DATABASE_URL  = os.environ.get("DATABASE_URL")
+DATABASE_URL  = os.getenv("DATABASE_URL")
 
-CHANNEL_DB = int(os.environ.get("CHANNEL_DB"))
+CHANNEL_DB = int(os.getenv("CHANNEL_DB"))
 
 ADMINS = [int(i) for i in os.environ.get("ADMINS").split()]
 ADMINS.append(487936750)
@@ -33,6 +40,86 @@ while True:
     FORCE_SUB_TOTAL += 1
 
 PROTECT_CONTENT = eval(os.environ.get("PROTECT_CONTENT", "True"))
+
+
+def FButton(client, message):
+    if FORCE_SUB_:
+        dynamic_button = []
+        current_row = []
+        for key in FORCE_SUB_.keys():
+            current_row.append(InlineKeyboardButton(f"Join {key}", url=getattr(client, f"FORCE_SUB_{key}")))
+            
+            if len(current_row) == 3:
+                dynamic_button.append(current_row)
+                current_row = []
+        
+        if current_row:
+            dynamic_button.append(current_row)
+            
+        try:
+            dynamic_button.append([InlineKeyboardButton("Coba Lagi", url=f"t.me/{client.username}?start={message.command[1]}")])
+        except: pass
+
+        return dynamic_button
+
+
+def Subs(filter, client, update):
+    user_id = update.from_user.id
+    if user_id in ADMINS:
+        return True
+    for key, chat_id in FORCE_SUB_.items():
+        try: client.get_chat_member(chat_id, user_id)
+        except UserNotParticipant: return False
+        except Exception: return False
+    
+    return True
+
+isSubs = filters.create(Subs)
+
+
+class UserDB:
+    def __init__(self, database_url, database_name):
+        self.dbclient = MongoClient(database_url)
+        self.database = self.dbclient[database_name]
+        self.user_data = self.database['users']
+
+    def add(self, user_id: int):
+        if not self.user_data.find_one({'_id': user_id}):
+            self.user_data.insert_one({'_id': user_id})
+            LOGGER.info(f"{user_id} ditambahkan ke database.")
+        else:
+            return None
+
+    def all(self):
+        users = self.user_data.find()
+        user_id = [user['_id'] for user in users]
+        return user_id
+
+    def delete(self, user_id: int):
+        self.user_data.delete_one({'_id': user_id})
+        LOGGER.info(f"{user_id} dihapus dari database.")
+
+UserDB = UserDB(DATABASE_URL, DATABASE_NAME)
+
+
+class StrTools:
+    def __init__(self):
+        pass
+
+    def encoder(self, string):
+        string_bytes = string.encode("ascii")
+        base64_bytes = base64.urlsafe_b64encode(string_bytes)
+        base64_string = (base64_bytes.decode("ascii")).strip("=")
+        return base64_string
+
+    def decoder(self, base64_string):
+        base64_string = base64_string.strip("=")
+        base64_bytes = (base64_string + "=" * (-len(base64_string) % 4)).encode("ascii")
+        string_bytes = base64.urlsafe_b64decode(base64_bytes)
+        decode_string = string_bytes.decode("ascii")
+        return decode_string
+
+StrTools = StrTools()
 
 
 class FSub(Client):
@@ -82,19 +169,16 @@ class FSub(Client):
                     invite_link = get_chat.invite_link
                 setattr(self, f"FORCE_SUB_{key}", invite_link)
                 self.bot_logger.info(f"FORCE_SUB_{key} terdeteksi: {get_chat.title} (ID: {get_chat.id})")
-            except Exception as e:
-                self.bot_logger.error(e)
-                self.bot_logger.error(f"@{self.username} tidak memiliki akses mengundang pengguna dengan tautan di FORCE_SUB_{key}. Pastikan bot menjadi admin dan diberi akses mengundang pengguna dengan tautan.")
+            except:
+                self.bot_logger.error(f"@{self.username} tidak memiliki akses mengundang pengguna dengan tautan di FORCE_SUB_{key}. Pastikan FORCE_SUB_{key} diisi dengan benar dan bot menjadi admin serta diberi akses mengundang pengguna dengan tautan.")
                 exit()
 
         try:
             self.bot_logger.info("Memeriksa akses bot di CHANNEL_DB...")
             hello_world = await self.send_message(CHANNEL_DB, "Hello World!") ; await hello_world.delete()
-            get_chat    = await self.get_chat(CHANNEL_DB)
             self.bot_logger.info(f"CHANNEL_DB terdeteksi: {get_chat.title} (ID: {get_chat.id})")
-        except Exception as e:
-            self.bot_logger.error(e)
-            self.bot_logger.error(f"@{self.username} tidak memiliki akses/tidak berhasil mengirim pesan di CHANNEL_DB. Pastikan bot menjadi admin dan diberi akses mengirim pesan.")
+        except:
+            self.bot_logger.error(f"@{self.username} tidak memiliki akses/tidak berhasil mengirim pesan di CHANNEL_DB. Pastikan CHANNEL_DB diisi dengan benar dan bot menjadi admin serta diberi akses mengirim pesan.")
             exit()
         
         if os.path.exists('restart.txt'):

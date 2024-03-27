@@ -4,25 +4,19 @@ from pyrogram import Client, filters
 from pyrogram.errors import FloodWait, MessageEmpty
 from pyrogram.types import Message, InlineKeyboardMarkup
 
-from FSub import ADMINS, CHANNEL_DB, PROTECT_CONTENT
-from FSub.helper.button import fsub_button
-from FSub.helper.filters import fsub_subscriber
-from FSub.helper.text import str_decoder
-from FSub.helper.userdb import add_user, full_user
+from FSub import ADMINS, CHANNEL_DB, PROTECT_CONTENT, UserDB, FButton, isSubs, StrTools
+
 
 START_STRING = "**Bot aktif dan berfungsi. Bot ini dapat menyimpan pesan di kanal khusus, dan pengguna mengakses melalui bot.**"
 FSUB_STRING  = "**\n\nUntuk melihat pesan yang dibagikan oleh bot. Join terlebih dahulu, lalu tekan tombol Coba Lagi.**" 
 
-member_fsub = filters.create(fsub_subscriber)
-
-
-@Client.on_message(filters.command("start") & filters.private & ~member_fsub)
+@Client.on_message(filters.command("start") & filters.private & ~isSubs)
 async def start_command_0(client, message):
     processing = await message.reply("...", quote=True)
     await asyncio.sleep(0.25)
     user_id = message.chat.id
-    buttons = fsub_button(client, message)
-    add_user(user_id)
+    buttons = FButton(client, message)
+    UserDB.add(user_id)
     if len(message.text) > 7:
         await processing.edit(START_STRING + FSUB_STRING, reply_markup=InlineKeyboardMarkup(buttons))
         return await message.delete()
@@ -30,17 +24,17 @@ async def start_command_0(client, message):
         return await processing.edit(START_STRING, reply_markup=InlineKeyboardMarkup(buttons))
 
 
-@Client.on_message(filters.command("start") & filters.private & member_fsub)
+@Client.on_message(filters.command("start") & filters.private & isSubs)
 async def start_command_1(client, message):
     processing = await message.reply("...", quote=True)
     await asyncio.sleep(0.25)
     user_id = message.chat.id
-    buttons = fsub_button(client, message)
-    add_user(user_id)
+    buttons = FButton(client, message)
+    UserDB.add(user_id)
     text = message.text
     if len(text) > 7:
         base64_string = text.split(" ", 1)[1]
-        string   = str_decoder(base64_string)
+        string   = StrTools.decoder(base64_string)
         argument = string.split("-")
         if len(argument) == 3:
             start = int(int(argument[1]) / abs(CHANNEL_DB))

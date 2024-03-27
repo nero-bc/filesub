@@ -3,8 +3,7 @@ from pyrogram.types import Message
 
 from pyromod.helpers import ikb
 
-from FSub import ADMINS, CHANNEL_DB
-from FSub.helper.text import str_encoder
+from FSub import ADMINS, CHANNEL_DB, StrTools
 
 
 NOT_FROM_CHDB   = "Pesan yang diteruskan bukan dari CHANNEL_DB."
@@ -39,7 +38,7 @@ async def batch_command(client, message):
             return await first_message.reply(MESSAGE_INVALID, quote=True)
 
     text_string   = f"get-{first_message_id * abs(CHANNEL_DB)}-{second_message_id * abs(CHANNEL_DB)}"
-    base64_string = str_encoder(text_string)
+    base64_string = StrTools.encoder(text_string)
     generate_link = f"t.me/{client.username}?start={base64_string}"
     share_button  = ikb([[("Bagikan", f"t.me/share/url?url={generate_link}", "url")]])
     await message.delete()

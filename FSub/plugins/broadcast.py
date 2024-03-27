@@ -4,8 +4,7 @@ from pyrogram import Client, filters
 from pyrogram.errors import FloodWait
 from pyrogram.types import Message
 
-from FSub import ADMINS, PROTECT_CONTENT
-from FSub.helper.userdb import del_user, full_user
+from FSub import ADMINS, PROTECT_CONTENT, UserDB
 
 
 @Client.on_message(filters.command("broadcast") & filters.user(ADMINS))
@@ -18,7 +17,7 @@ async def broadcast_command(client, message):
     await asyncio.sleep(0.25)
     
     successful, unsuccessful = 0, 0
-    all_users   = full_user()
+    all_users   = UserDB.all()
     total_users = len(all_users)
 
     async def edit_processing():
@@ -40,7 +39,7 @@ async def broadcast_command(client, message):
         except FloodWait as e:
             await asyncio.sleep(e.value)
         except Exception:
-            del_user(user_id) ; unsuccessful += 1 ; pass
+            UserDB.delete(user_id) ; unsuccessful += 1 ; pass
 
     await message.delete() ; await processing.delete()
     status_broadcast = f"#BROADCAST\n - Berhasil: {successful}\n - Gagal: {unsuccessful}"
