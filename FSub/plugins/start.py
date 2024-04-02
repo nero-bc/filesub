@@ -34,9 +34,9 @@ def FSubs(filter, client, update):
         return True
     for key, chat_id in FORCE_SUB_.items():
         try: client.get_chat_member(chat_id, user_id)
-        except UserNotParticipant: return False
-        except Exception: return False
-    
+        except (UserNotParticipant, Exception):
+            return False
+
     return True
 
 isSubs = filters.create(FSubs)
@@ -49,7 +49,6 @@ FSUB_STRING  = "**\n\nUntuk melihat pesan yang dibagikan oleh bot. Join terlebih
 @Client.on_message(filters.command("start") & filters.private & ~isSubs)
 async def start_command_0(client, message):
     processing = await message.reply("...", quote=True)
-    await asyncio.sleep(0.25)
     user_id = message.chat.id
     buttons = FButton(client, message)
     UserDB.add(user_id)
@@ -57,13 +56,12 @@ async def start_command_0(client, message):
         await processing.edit(START_STRING + FSUB_STRING, reply_markup=InlineKeyboardMarkup(buttons))
         return await message.delete()
     else:
-        return await processing.edit(START_STRING, reply_markup=InlineKeyboardMarkup(buttons))
+        await processing.edit(START_STRING, reply_markup=InlineKeyboardMarkup(buttons))
 
 
 @Client.on_message(filters.command("start") & filters.private & isSubs)
 async def start_command_1(client, message):
     processing = await message.reply("...", quote=True)
-    await asyncio.sleep(0.25)
     user_id = message.chat.id
     buttons = FButton(client, message)
     UserDB.add(user_id)
@@ -95,11 +93,11 @@ async def start_command_1(client, message):
                 await asyncio.sleep(0.25)
             except FloodWait as e:
                 await asyncio.sleep(e.value)
-            except MessageEmpty:
+            except (MessageEmpty, Exception):
                 pass
-        await message.delete() ; return await processing.delete()
+        await processing.delete() ; return await message.delete() 
     else:
-        return await processing.edit(START_STRING, reply_markup=InlineKeyboardMarkup(buttons))
+        await processing.edit(START_STRING, reply_markup=InlineKeyboardMarkup(buttons))
 
 
 @Client.on_message(filters.command("restart") & filters.private & filters.user(ADMINS))

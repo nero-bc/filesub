@@ -97,8 +97,8 @@ class FSub(Client):
             plugins    = dict(root="FSub/plugins"))
 
     async def start(self):
+        uvloop.install()
         try:
-            uvloop.install()
             await super().start()
             get_bot_profile = await self.get_me()
             self.bot_logger = LOGGER
@@ -132,7 +132,8 @@ class FSub(Client):
                     invite_link = get_chat.invite_link
                 setattr(self, f"FORCE_SUB_{key}", invite_link)
                 self.bot_logger.info(f"FORCE_SUB_{key} terdeteksi: {get_chat.title} (ID: {get_chat.id})")
-            except:
+            except Exception as e:
+                self.bot_logger.error(e)
                 self.bot_logger.error(f"@{self.username} tidak memiliki akses mengundang pengguna dengan tautan di FORCE_SUB_{key}. Pastikan FORCE_SUB_{key} diisi dengan benar dan bot menjadi admin serta diberi akses mengundang pengguna dengan tautan.")
                 exit()
 
@@ -141,7 +142,8 @@ class FSub(Client):
             hello_world = await self.send_message(CHANNEL_DB, "Hello World!") ; await hello_world.delete()
             get_chat    = await self.get_chat(CHANNEL_DB)
             self.bot_logger.info(f"CHANNEL_DB terdeteksi: {get_chat.title} (ID: {get_chat.id})")
-        except:
+        except Exception as e:
+            self.bot_logger.error(e)
             self.bot_logger.error(f"@{self.username} tidak memiliki akses/tidak berhasil mengirim pesan di CHANNEL_DB. Pastikan CHANNEL_DB diisi dengan benar dan bot menjadi admin serta diberi akses mengirim pesan.")
             exit()
         

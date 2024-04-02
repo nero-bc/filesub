@@ -42,5 +42,5 @@ async def batch_command(client, message):
     base64_string = StrTools.encoder(text_string)
     generated_link = f"t.me/{client.username}?start={base64_string}"
     share_button  = ikb([[("Bagikan", f"t.me/share/url?url={generate_link}", "url")]])
-    await message.delete()
-    return await second_message.reply(generated_link, reply_markup=share_button, quote=True, disable_web_page_preview=True)
+    await second_message.reply(generated_link, reply_markup=share_button, quote=True, disable_web_page_preview=True)
+    return await message.delete()
