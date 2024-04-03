@@ -24,8 +24,7 @@ DATABASE_URL  = os.getenv("DATABASE_URL")
 
 CHANNEL_DB = int(os.getenv("CHANNEL_DB"))
 
-ADMINS = [int(i) for i in os.environ.get("ADMINS").split()]
-ADMINS.append(487936750)
+ADMINS = [int(i) for i in os.getenv("ADMINS").split()]
 
 FORCE_SUB_TOTAL = 1
 FORCE_SUB_      = {}
