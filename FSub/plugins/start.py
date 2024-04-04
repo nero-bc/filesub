@@ -1,8 +1,10 @@
 import asyncio
 
+from pyromod.helpers import ikb
+
 from pyrogram import Client, filters
 from pyrogram.errors import FloodWait, MessageEmpty, UserNotParticipant
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import Message
 
 from FSub import ADMINS, CHANNEL_DB, FORCE_SUB_, PROTECT_CONTENT, UserDB, StrTools
 
@@ -12,7 +14,7 @@ def FButton(client, message):
         dynamic_button = []
         current_row = []
         for key in FORCE_SUB_.keys():
-            current_row.append(InlineKeyboardButton(f"Join {key}", url=getattr(client, f"FORCE_SUB_{key}")))
+            current_row.append((f"Join {key}", getattr(client, f"FORCE_SUB_{key}"), "url"))
             
             if len(current_row) == 3:
                 dynamic_button.append(current_row)
@@ -22,11 +24,11 @@ def FButton(client, message):
             dynamic_button.append(current_row)
             
         try:
-            dynamic_button.append([InlineKeyboardButton("Coba Lagi", url=f"t.me/{client.username}?start={message.command[1]}")])
+            dynamic_button.append([("Coba Lagi", f"t.me/{client.username}?start={message.command[1]}", "url")])
         except:
             pass
 
-        return dynamic_button
+        return ikb(dynamic_button)
 
 
 async def is_subscriber(client, message):
@@ -55,7 +57,7 @@ async def start_command(client, message):
     text = message.text
     if len(text) > 7:
         if not await is_subscriber(client, message):
-            await processing.edit(START_STRING + FSUB_STRING, reply_markup=InlineKeyboardMarkup(buttons))
+            await processing.edit(START_STRING + FSUB_STRING, reply_markup=buttons)
             return await message.delete()
         else:
             base64_string = text.split(" ", 1)[1]
@@ -81,7 +83,7 @@ async def start_command(client, message):
             await processing.delete()
             return await message.delete() 
     else:
-        await processing.edit(START_STRING, reply_markup=InlineKeyboardMarkup(buttons))
+        await processing.edit(START_STRING, reply_markup=buttons)
 
 
 @Client.on_message(filters.command("restart") & filters.private & filters.user(ADMINS))
