@@ -1,7 +1,7 @@
 import asyncio
 
 from pyrogram import Client, filters
-from pyrogram.errors import FloodWait
+from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated
 from pyrogram.types import Message
 
 from FSub import ADMINS, PROTECT_CONTENT, UserDB
@@ -10,14 +10,13 @@ from FSub import ADMINS, PROTECT_CONTENT, UserDB
 @Client.on_message(filters.command("broadcast") & filters.user(ADMINS))
 async def broadcast_command(client, message):
     if not message.reply_to_message:
-        return await message.reply("Balas ke pesan yang ingin disiarkan.", quote=True)
+        await message.reply("Balas ke pesan yang ingin disiarkan.", quote=True)
 
-    replied = message.reply_to_message
-    processing = await replied.reply("Terkirim: ...", quote=True)
+    processing = await message.reply_to_message.reply("Terkirim: ...", quote=True)
     await asyncio.sleep(0.25)
     
     successful, unsuccessful = 0, 0
-    all_users   = UserDB.all()
+    all_users = UserDB.all()
     total_users = len(all_users)
 
     async def edit_processing():
@@ -25,7 +24,8 @@ async def broadcast_command(client, message):
             try:
                 await processing.edit(f"Terkirim: {successful}/{total_users}")
                 await asyncio.sleep(5)
-            except: pass
+            except Exception:
+                pass
 
     asyncio.create_task(edit_processing())
     
@@ -34,13 +34,17 @@ async def broadcast_command(client, message):
         if user_id in ADMINS:
             continue
         try:
-            await replied.copy(user_id, protect_content=PROTECT_CONTENT) ; successful += 1
+            await message.reply_to_message.copy(user_id, protect_content=PROTECT_CONTENT)
+            successful += 1
         except FloodWait as e:
             await asyncio.sleep(e.value)
+        except(UserIsBlocked, InputUserDeactivated):
+            UserDB.delete(user_id)
+            unsuccessful += 1
         except Exception:
-            UserDB.delete(user_id) ; unsuccessful += 1 ; pass
+            unsuccessful += 1
 
-    await message.delete() ; await processing.delete()
+    await processing.delete()
     status_broadcast = f"#BROADCAST\n - Berhasil: {successful}\n - Gagal: {unsuccessful}"
     client.bot_logger.info("Pesan siaran selesai dikirim.")
-    return await replied.reply(status_broadcast, quote=True)
+    await message.reply_to_message.reply(status_broadcast, quote=True)

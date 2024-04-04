@@ -14,22 +14,22 @@ logging.basicConfig(level=logging.INFO)
 logging.getLogger("pyrogram").setLevel(logging.ERROR)
 LOGGER = logging.getLogger("FSub")
 
-API_ID    = int(os.environ.get("API_ID", 2040))
-API_HASH  = os.environ.get("API_HASH", "b18441a1ff607e10a989891a5462e627")
+API_ID = int(os.environ.get("API_ID", 2040))
+API_HASH = os.environ.get("API_HASH", "b18441a1ff607e10a989891a5462e627")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 
 DATABASE_NAME = BOT_TOKEN.split(":", 1)[0]
-DATABASE_URL  = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 CHANNEL_DB = int(os.getenv("CHANNEL_DB"))
 
 ADMINS = [int(i) for i in os.getenv("ADMINS").split()]
 
 FORCE_SUB_TOTAL = 1
-FORCE_SUB_      = {}
+FORCE_SUB_ = {}
 while True:
-    key   = f"FORCE_SUB_{FORCE_SUB_TOTAL}"
+    key = f"FORCE_SUB_{FORCE_SUB_TOTAL}"
     value = os.environ.get(key)
     if value is None:
         break
@@ -87,13 +87,13 @@ StrTools = StrTools()
 class FSub(Client):
     def __init__(self):
         super().__init__(
-            name       = "Bot",
-            api_id     = API_ID, 
-            api_hash   = API_HASH,
-            bot_token  = BOT_TOKEN,
-            in_memory  = True,
+            name = "Bot",
+            api_id = API_ID, 
+            api_hash = API_HASH,
+            bot_token = BOT_TOKEN,
+            in_memory = True,
             parse_mode = ParseMode.MARKDOWN,
-            plugins    = dict(root="FSub/plugins"))
+            plugins = dict(root="FSub/plugins"))
 
     async def start(self):
         uvloop.install()
@@ -101,7 +101,7 @@ class FSub(Client):
             await super().start()
             get_bot_profile = await self.get_me()
             self.bot_logger = LOGGER
-            self.username   = get_bot_profile.username
+            self.username = get_bot_profile.username
             self.bot_logger.info(f"Memulai bot: @{self.username} (ID: {get_bot_profile.id})")
         except Exception as e:
             LOGGER.error(e)
@@ -124,7 +124,7 @@ class FSub(Client):
         for key, chat_id in FORCE_SUB_.items():
             try:
                 self.bot_logger.info(f"Memeriksa akses bot di FORCE_SUB_{key}...")
-                get_chat    = await self.get_chat(chat_id)
+                get_chat = await self.get_chat(chat_id)
                 invite_link = get_chat.invite_link
                 if not invite_link:
                     await self.export_chat_invite_link(chat_id)
@@ -138,8 +138,9 @@ class FSub(Client):
 
         try:
             self.bot_logger.info("Memeriksa akses bot di CHANNEL_DB...")
-            hello_world = await self.send_message(CHANNEL_DB, "Hello World!") ; await hello_world.delete()
-            get_chat    = await self.get_chat(CHANNEL_DB)
+            hello_world = await self.send_message(CHANNEL_DB, "Hello World!")
+            await hello_world.delete()
+            get_chat = await self.get_chat(CHANNEL_DB)
             self.bot_logger.info(f"CHANNEL_DB terdeteksi: {get_chat.title} (ID: {get_chat.id})")
         except Exception as e:
             self.bot_logger.error(e)
@@ -148,7 +149,7 @@ class FSub(Client):
         
         if os.path.exists('restart.txt'):
             with open('restart.txt', 'r') as f:
-                chat_id    = int(f.readline().strip())
+                chat_id = int(f.readline().strip())
                 message_id = int(f.readline().strip())
                 await self.edit_message_text(chat_id, message_id, "Bot dimulai ulang.")
             

@@ -23,79 +23,63 @@ def FButton(client, message):
             
         try:
             dynamic_button.append([InlineKeyboardButton("Coba Lagi", url=f"t.me/{client.username}?start={message.command[1]}")])
-        except: pass
+        except:
+            pass
 
         return dynamic_button
 
 
-def FSubs(filter, client, update):
-    user_id = update.from_user.id
+async def is_subscriber(client, message):
+    user_id = message.chat.id
     if user_id in ADMINS:
         return True
+
     for key, chat_id in FORCE_SUB_.items():
-        try: client.get_chat_member(chat_id, user_id)
-        except (UserNotParticipant, Exception):
+        try: 
+            await client.get_chat_member(chat_id, user_id)
+        except(UserNotParticipant, Exception):
             return False
-
+    
     return True
-
-isSubs = filters.create(FSubs)
 
 
 START_STRING = "**Bot aktif dan berfungsi. Bot ini dapat menyimpan pesan di kanal khusus, dan pengguna mengakses melalui bot.**"
-FSUB_STRING  = "**\n\nUntuk melihat pesan yang dibagikan oleh bot. Join terlebih dahulu, lalu tekan tombol Coba Lagi.**" 
+FSUB_STRING = "**\n\nUntuk melihat pesan yang dibagikan oleh bot. Join terlebih dahulu, lalu tekan tombol Coba Lagi.**" 
 
-
-@Client.on_message(filters.command("start") & filters.private & ~isSubs)
-async def start_command_0(client, message):
-    processing = await message.reply("...", quote=True)
-    user_id = message.chat.id
-    buttons = FButton(client, message)
-    UserDB.add(user_id)
-    if len(message.text) > 7:
-        await processing.edit(START_STRING + FSUB_STRING, reply_markup=InlineKeyboardMarkup(buttons))
-        return await message.delete()
-    else:
-        await processing.edit(START_STRING, reply_markup=InlineKeyboardMarkup(buttons))
-
-
-@Client.on_message(filters.command("start") & filters.private & isSubs)
-async def start_command_1(client, message):
+@Client.on_message(filters.command("start") & filters.private)
+async def start_command(client, message):
     processing = await message.reply("...", quote=True)
     user_id = message.chat.id
     buttons = FButton(client, message)
     UserDB.add(user_id)
     text = message.text
     if len(text) > 7:
-        base64_string = text.split(" ", 1)[1]
-        string   = StrTools.decoder(base64_string)
-        argument = string.split("-")
-        if len(argument) == 3:
-            start = int(int(argument[1]) / abs(CHANNEL_DB))
-            end   = int(int(argument[2]) / abs(CHANNEL_DB))
-            if start <= end:
-                message_ids = range(start, end + 1)
-            else:
-                message_ids = []
-                i = start
-                while True:
-                    message_ids.append(i)
-                    i -= 1
-                    if i < end:
-                        break
-        elif len(argument) == 2:
-            message_ids = [int(int(argument[1]) / abs(CHANNEL_DB))]
+        if not await is_subscriber(client, message):
+            await processing.edit(START_STRING + FSUB_STRING, reply_markup=InlineKeyboardMarkup(buttons))
+            return await message.delete()
+        else:
+            base64_string = text.split(" ", 1)[1]
+            string = StrTools.decoder(base64_string)
+            argument = string.split("-")
+            message_ids = []
+            if len(argument) == 3:
+                start = int(int(argument[1]) / abs(CHANNEL_DB))
+                end = int(int(argument[2]) / abs(CHANNEL_DB))
+                message_ids = range(start, end + 1) if start <= end else range(start, end - 1, -1)
+            elif len(argument) == 2:
+                message_ids.append(int(int(argument[1]) / abs(CHANNEL_DB)))
 
-        msgs = await client.get_messages(CHANNEL_DB, message_ids)
-        for msg in msgs:
-            try:
-                await msg.copy(user_id, protect_content=PROTECT_CONTENT)
-                await asyncio.sleep(0.25)
-            except FloodWait as e:
-                await asyncio.sleep(e.value)
-            except (MessageEmpty, Exception):
-                pass
-        await processing.delete() ; return await message.delete() 
+            msgs = await client.get_messages(CHANNEL_DB, message_ids)
+            for msg in msgs:
+                try:
+                    await msg.copy(user_id, protect_content=PROTECT_CONTENT)
+                    await asyncio.sleep(0.25)
+                except FloodWait as e:
+                    await asyncio.sleep(e.value)
+                except (MessageEmpty, Exception):
+                    pass
+            await processing.delete()
+            return await message.delete() 
     else:
         await processing.edit(START_STRING, reply_markup=InlineKeyboardMarkup(buttons))
 
