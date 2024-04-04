@@ -12,7 +12,7 @@ async def broadcast_command(client, message):
     if not message.reply_to_message:
         await message.reply("Balas ke pesan yang ingin disiarkan.", quote=True)
 
-    processing = await message.reply_to_message.reply("Terkirim: ...", quote=True)
+    processing = await message.reply("Terkirim: ...", quote=True)
     await asyncio.sleep(0.25)
     
     successful, unsuccessful = 0, 0
@@ -44,7 +44,7 @@ async def broadcast_command(client, message):
         except Exception:
             unsuccessful += 1
 
-    await processing.delete()
     status_broadcast = f"#BROADCAST\n - Berhasil: {successful}\n - Gagal: {unsuccessful}"
     client.bot_logger.info("Pesan siaran selesai dikirim.")
     await message.reply_to_message.reply(status_broadcast, quote=True)
+    return await processing.delete()
