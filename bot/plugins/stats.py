@@ -22,4 +22,4 @@ async def users(client, message):
 
 @Client.on_message(filters.command("log") & filters.user(ADMINS))
 async def log(_, message):
-    await message.reply_document("log.txt", quote=True)
+    await message.reply_document("./log.txt", quote=True)

@@ -4,6 +4,8 @@ import asyncio
 import uvloop
 import base64
 
+from logging.handlers import RotatingFileHandler
+
 from pymongo import MongoClient
 
 from pyrogram import Client, idle
@@ -14,9 +16,12 @@ from pyrogram.errors import RPCError
 logging.getLogger("pyrogram").setLevel(logging.ERROR)
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler("log.txt"), logging.StreamHandler()],
-    level=logging.INFO)
-
+    handlers=[
+        RotatingFileHandler("log.txt", mode="w+", maxBytes=5242880, backupCount=1),
+        logging.StreamHandler()
+    ],
+    level=logging.INFO
+)
 
 LOGGER = logging.getLogger("BOT")
 
