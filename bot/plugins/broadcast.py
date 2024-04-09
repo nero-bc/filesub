@@ -1,60 +1,106 @@
+import os
 import asyncio
 
 from pyrogram import Client, filters
 from pyrogram.errors import FloodWait, RPCError
 
-from bot import ADMINS, PROTECT_CONTENT
+from bot import BOT_ADMINS, PROTECT_CONTENT
+
+BROADCASTING, succeeded, failed, total_users = False, 0, 0, 0
 
 
-@Client.on_message(filters.command("broadcast") & filters.user(ADMINS))
+@Client.on_message(filters.command("broadcast") & filters.user(BOT_ADMINS))
 async def broadcast(client, message):
+    global BROADCASTING, succeeded, failed, total_users
+    
+    RUNNING_MESSAGE = "Broadcast is running, wait until the task is finished.\n\n**/status:** Show broadcast status."
+
     if not message.reply_to_message:
-        broadcast_ask = await client.ask(text="Silahkan kirim pesan yang ingin disiarkan.\n\n/cancel untuk membatalkan.", chat_id=message.chat.id)
-        if broadcast_ask.text == "/cancel":
-            await message.reply("Proses dibatalkan.")
-            return
+        if not BROADCASTING:
+            await message.reply("Please reply to a message you want to broadcast.", quote=True)
+            BROADCASTING, succeeded, failed, total_users = False, 0, 0, 0
         else:
-            broadcast_message = broadcast_ask
+            await message.reply(RUNNING_MESSAGE, quote=True)
+            
+        return
     else:
-        broadcast_message = message.reply_to_message
+        if not BROADCASTING:
+            BROADCASTING, succeeded, failed, total_users = True, 0, 0, 0
+            broadcast_message = message.reply_to_message
+        else:
+            await message.reply(RUNNING_MESSAGE, quote=True)
+            return
 
-    processing = await message.reply("Terkirim: ...", quote=True)
+    process_message = await message.reply("Sending...", quote=True)
+    
+    with open("broadcast.txt", "w") as f:
+        f.write(f"{message.chat.id}\n{process_message.id}")
 
-    client.log.info("Mengirim pesan siaran...")
+    all_users = client.UserDB.all_users()
+    total_users = len(all_users)
     
-    successful, unsuccessful = 0, 0
-    total_users = len(client.db.all_users())
-    
-    async def edit_processing():
-        while successful + unsuccessful < total_users:
-            try:
-                await asyncio.sleep(5)
-                await processing.edit(f"Terkirim: {successful}/{total_users}")
-                client.log.info(f"BROADCAST: Terkirim: {successful}/{total_users}")
-            except FloodWait as e:
-                await asyncio.sleep(e.value)
-                client.log.warning(f"BROADCAST: FloodWait: Bot dijeda selama {e.value} detik")
-            except RPCError:
-                pass
-
-    asyncio.create_task(edit_processing())
-    
-    for user_id in client.db.all_users():
-        if user_id in ADMINS:
+    for user_id in all_users:
+        if not BROADCASTING:
+            break
+        
+        if user_id in BOT_ADMINS:
             continue
+        
         try:
             await broadcast_message.copy(user_id, protect_content=PROTECT_CONTENT)
-            successful += 1
+            succeeded += 1
         except FloodWait as e:
+            client.Logger.warning(e)
             await asyncio.sleep(e.value)
-            client.log.warning(f"BROADCAST: FloodWait: Bot dijeda selama {e.value} detik")
         except RPCError:
-            client.db.delete_user(user_id)
-            unsuccessful += 1
+            client.UserDB.delete_user(user_id)
+            failed += 1
+    
+        if (succeeded + failed) % 25 == 0:
+            await process_message.edit(f"**Broadcast Running**\n - Sent: {succeeded}/{total_users}\n - Failed: {failed}\n\n**/cancel:** Cancel the process.")
+    
+    if not BROADCASTING:
+        await message.reply(f"**Broadcast Aborted**\n - Sent: {succeeded}/{total_users}\n - Failed: {failed}", quote=True)
+    else:
+        await message.reply(f"**Broadcast Finished**\n - Succeeded: {succeeded}\n - Failed: {failed}", quote=True)
+    
+    BROADCASTING, succeeded, failed, total_users = False, 0, 0, 0
+    
+    if os.path.exists("broadcast.txt"):
+        os.remove("broadcast.txt")
 
-    status_broadcast = f"#BROADCAST\n - Berhasil: {successful}\n - Gagal: {unsuccessful}"
+    await process_message.delete()
+
+
+@Client.on_message(filters.command("status") & filters.user(BOT_ADMINS))
+async def status(_, message):
+    global BROADCASTING, succeeded, failed, total_users
+
+    if not BROADCASTING:
+        await message.reply("No broadcast is running.", quote=True)
+    else:
+        await message.reply(f"**Broadcast Status**\n - Sent: {succeeded}/{total_users}\n - Failed: {failed}", quote=True)
+
+
+@Client.on_message(filters.command("cancel") & filters.user(BOT_ADMINS))
+async def cancel(client, message):
+    global BROADCASTING
     
-    client.log.info("Pesan siaran telah dikirim")
-    
-    await message.reply(status_broadcast, quote=True)
-    return await processing.delete()
+    if not BROADCASTING:
+        await message.reply("No broadcast is running.", quote=True)
+    else:
+        approval_message = await client.ask(
+            text="Are you sure you want to cancel the broadcast process?\n\n**/yes** or **/no**",
+            chat_id=message.chat.id
+        )
+        if approval_message.text and approval_message.text == "/yes":
+            await approval_message.reply("Broadcast has been aborted.", quote=True)
+            BROADCASTING = False
+            if os.path.exists("broadcast.txt"):
+                os.remove("broadcast.txt")
+        elif approval_message.text and approval_message.text == "/no":
+            await approval_message.reply("Broadcast cancellation is not approved.", quote=True)
+        else:
+            await approval_message.reply("The message is invalid.", quote=True)
+
+    return

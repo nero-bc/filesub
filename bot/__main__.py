@@ -1,4 +1,4 @@
-import bot
+from bot import Bot
 
 if __name__ == '__main__':
-    bot.fsub.run()
+    Bot.run()
